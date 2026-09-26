@@ -47,7 +47,8 @@ const state = {
   resultView: null, // { field, extra, missing, text, ok } — показан результат выполнения
   run: null,
   check: null,
-  scores: store.get('scores', {}),
+  // Версия 2: старые результаты считались без длинных стен и могли быть завышены
+  scores: store.get('scores2', {}),
 };
 
 // ---------- Сообщения ----------
@@ -175,7 +176,7 @@ function setTool(tool) {
 
 function scoreBadge(id) {
   const s = state.scores[id];
-  return s === undefined ? '' : s === 2 ? ' ✓' : ` (${s} б.)`;
+  return s === undefined ? '' : s === 2 ? ' ✓' : ` (${s} из 2)`;
 }
 
 function fillTaskSelect() {
@@ -208,7 +209,7 @@ function renderTask() {
   const s = state.scores[t.id];
   status.hidden = s === undefined;
   if (s !== undefined) {
-    status.textContent = s === 2 ? 'Решено: 2 балла' : `Лучший результат: ${s} б.`;
+    status.textContent = s === 2 ? 'Решено: 2 из 2' : `Лучший результат: ${s} из 2`;
     status.className = `chip chip-score s${s}`;
   }
   $('#task-text').innerHTML = t.text.split('\n\n').map((p) => `<p>${p}</p>`).join('');
@@ -535,7 +536,7 @@ function runCheck() {
     const prev = state.scores[state.task.id];
     if (prev === undefined || res.score > prev) {
       state.scores[state.task.id] = res.score;
-      store.set('scores', state.scores);
+      store.set('scores2', state.scores);
       fillTaskSelect();
     }
     renderTaskStatus();
@@ -551,7 +552,7 @@ function renderTaskStatus() {
   const status = $('#task-status');
   status.hidden = s === undefined;
   if (s !== undefined) {
-    status.textContent = s === 2 ? 'Решено: 2 балла' : `Лучший результат: ${s} б.`;
+    status.textContent = s === 2 ? 'Решено: 2 из 2' : `Лучший результат: ${s} из 2`;
     status.className = `chip chip-score s${s}`;
   }
 }
@@ -565,8 +566,9 @@ function renderCheck(res) {
     <div class="score s${res.score}">
       <div class="score-num">${res.score}<small>/2</small></div>
       <div>
-        <strong>${res.score} ${words[res.score]}</strong>
+        <strong>${res.score} ${words[res.score]} из 2</strong>
         <p>${res.verdict}</p>
+        <p class="score-note">За задание 15 на ОГЭ ставят от 0 до 2 баллов.</p>
       </div>
     </div>
     <div class="small muted">Верно на ${okCount} из ${res.results.length} вариантов. Нажмите на вариант, чтобы посмотреть результат на поле.</div>

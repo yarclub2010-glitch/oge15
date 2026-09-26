@@ -70,9 +70,15 @@ export function checkTask(task, program) {
   const maxExtra = Math.max(0, ...results.filter((r) => r.diff).map((r) => r.diff.extra.length));
   const maxMissing = Math.max(0, ...results.filter((r) => r.diff).map((r) => r.diff.missing.length));
 
+  // Не закрашено ни одной нужной клетки ни на одном поле — задача не решалась вовсе
+  const nothingDone = !failedRun && results.every((r) => r.diff.missing.length === r.variant.target.size);
+
   let score;
   let verdict;
-  if (failedRun) {
+  if (nothingDone) {
+    score = 0;
+    verdict = 'Программа не закрасила ни одной нужной клетки — это 0 баллов.';
+  } else if (failedRun) {
     score = 0;
     verdict = failedRun.run.status === 'crash'
       ? 'Робот разбился хотя бы на одном варианте — по критериям это 0 баллов.'
@@ -84,10 +90,10 @@ export function checkTask(task, program) {
     verdict = 'Алгоритм правильно работает на всех проверенных вариантах.';
   } else if (maxExtra <= 10 && maxMissing <= 10) {
     score = 1;
-    verdict = `Робот не разбивается, но есть ошибки в закраске (лишних до ${maxExtra}, незакрашенных до ${maxMissing}). Не больше 10 ошибок каждого вида — это 1 балл.`;
+    verdict = `Робот не разбивается, но закраска неточная: в худшем варианте лишних клеток — ${maxExtra}, незакрашенных — ${maxMissing}. Если ошибок каждого вида не больше 10 на любом поле — это 1 балл.`;
   } else {
     score = 0;
-    verdict = `Слишком много ошибок в закраске (лишних до ${maxExtra}, незакрашенных до ${maxMissing}). Больше 10 ошибок — 0 баллов.`;
+    verdict = `Слишком много ошибок в закраске: в худшем варианте лишних клеток — ${maxExtra}, незакрашенных — ${maxMissing}. Если ошибок больше 10 — это 0 баллов.`;
   }
   return { results, score, verdict };
 }

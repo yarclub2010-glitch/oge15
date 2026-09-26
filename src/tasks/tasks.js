@@ -39,9 +39,10 @@ export function makePick(mode, seed) {
   }
 }
 
-// Проход в стене длины len: несколько подряд идущих клеток, не на концах стены
-function passage(len, pick) {
-  const width = pick(1, Math.min(3, len - 2));
+// Проход в стене длины len: несколько подряд идущих клеток, не на концах стены.
+// big — «длинный» вариант: поле бесконечное, поэтому и проход может быть широким
+function passage(len, pick, big = false) {
+  const width = big ? pick(11, Math.min(14, len - 2)) : pick(1, Math.min(3, len - 2));
   const start = pick(1, len - 1 - width);
   return Array.from({ length: width }, (_, i) => start + i);
 }
@@ -85,9 +86,9 @@ function program(bodyLines) {
 // outer: закрашивать внешние стороны уголка вместо внутренних
 
 function cornerGenerator({ h, v, start, outer = false, passages = true }) {
-  return (pick) => {
-    const lenH = pick(4, 11);
-    const lenV = pick(4, 8);
+  return (pick, big = false) => {
+    const lenH = big ? pick(25, 30) : pick(4, 11);
+    const lenV = big ? pick(18, 22) : pick(4, 8);
     const m = 2;
     const w = lenH + 1 + 2 * m;
     const ht = lenV + 1 + 2 * m;
@@ -97,8 +98,8 @@ function cornerGenerator({ h, v, start, outer = false, passages = true }) {
 
     const hCells = Array.from({ length: lenH }, (_, k) => (h === 'left' ? X - 1 - k : X + k));
     const vCells = Array.from({ length: lenV }, (_, k) => (v === 'down' ? Y + k : Y - 1 - k));
-    const gapH = passages ? passage(lenH, pick) : [];
-    const gapV = passages ? passage(lenV, pick) : [];
+    const gapH = passages ? passage(lenH, pick, big) : [];
+    const gapV = passages ? passage(lenV, pick, big) : [];
 
     hCells.forEach((x, k) => { if (!gapH.includes(k)) f.hLine(Y, x, x); });
     vCells.forEach((y, k) => { if (!gapV.includes(k)) f.vLine(X, y, y); });
@@ -181,12 +182,12 @@ export const TASKS = [
     title: 'Стена с проходом',
     text: 'На бесконечном поле есть горизонтальная стена. Длина стены неизвестна. В стене есть ровно один проход; точное место прохода и его ширина неизвестны. Робот находится в клетке непосредственно над стеной у её левого конца.\n\nНапишите алгоритм, закрашивающий все клетки, расположенные непосредственно выше стены. Проход должен остаться незакрашенным.',
     hint: HINT_PASSAGE,
-    generate(pick) {
-      const len = pick(5, 12);
+    generate(pick, big = false) {
+      const len = big ? pick(30, 35) : pick(5, 12);
       const f = new Field(len + 4, 6);
       const x0 = 2;
       const Y = 3;
-      const gap = passage(len, pick);
+      const gap = passage(len, pick, big);
       const target = new Set();
       for (let k = 0; k < len; k++) {
         if (gap.includes(k)) continue;
@@ -204,12 +205,12 @@ export const TASKS = [
     title: 'Вертикальная стена с проходом',
     text: 'На бесконечном поле есть вертикальная стена. Длина стены неизвестна. В стене есть ровно один проход; точное место прохода и его ширина неизвестны. Робот находится в клетке непосредственно слева от стены у её верхнего конца.\n\nНапишите алгоритм, закрашивающий все клетки, расположенные непосредственно левее стены. Проход должен остаться незакрашенным.',
     hint: HINT_PASSAGE,
-    generate(pick) {
-      const len = pick(5, 10);
+    generate(pick, big = false) {
+      const len = big ? pick(22, 26) : pick(5, 10);
       const f = new Field(6, len + 4);
       const X = 3;
       const y0 = 2;
-      const gap = passage(len, pick);
+      const gap = passage(len, pick, big);
       const target = new Set();
       for (let k = 0; k < len; k++) {
         if (gap.includes(k)) continue;
@@ -233,8 +234,8 @@ export const TASKS = [
     title: 'Обойти стену',
     text: 'На бесконечном поле есть горизонтальная стена без проходов. Длина стены неизвестна. Робот находится в клетке непосредственно над стеной у её левого конца.\n\nНапишите алгоритм, закрашивающий все клетки, расположенные непосредственно выше и непосредственно ниже стены.',
     hint: 'Пройдите вдоль стены сверху, закрашивая клетки. Когда стена закончится, Робот окажется правее её конца: спуститесь вниз, сделайте шаг влево и закрашивайте клетки снизу, двигаясь влево.',
-    generate(pick) {
-      const len = pick(3, 12);
+    generate(pick, big = false) {
+      const len = big ? pick(30, 35) : pick(3, 12);
       const f = new Field(len + 4, 7);
       const x0 = 2;
       const Y = 3;
@@ -263,15 +264,15 @@ export const TASKS = [
     title: 'Коридор',
     text: 'На бесконечном поле есть горизонтальный коридор шириной в одну клетку: две горизонтальные стены одинаковой длины одна под другой. Длина коридора неизвестна. В верхней и в нижней стене есть ровно по одному проходу; место и ширина проходов неизвестны, но проходы не находятся друг напротив друга. Робот находится в левой клетке коридора.\n\nНапишите алгоритм, закрашивающий все клетки коридора, включая клетки у проходов.',
     hint: 'Клетка принадлежит коридору, если сверху стена ИЛИ снизу стена: в месте прохода одна из стен всё равно есть. Используйте в условии цикла связку «или».',
-    generate(pick) {
-      const len = pick(6, 12);
+    generate(pick, big = false) {
+      const len = big ? pick(30, 35) : pick(6, 12);
       const f = new Field(len + 4, 7);
       const x0 = 2;
       const Y = 3;
-      const w1 = pick(1, 2);
-      const s1 = pick(1, len - 1 - w1);
+      const w1 = big ? pick(11, 13) : pick(1, 2);
+      const s1 = big ? pick(1, 3) : pick(1, len - 1 - w1);
       const top = Array.from({ length: w1 }, (_, i) => s1 + i);
-      const w2 = pick(1, 2);
+      const w2 = big ? pick(11, 13) : pick(1, 2);
       const starts = [];
       for (let s = 1; s <= len - 1 - w2; s++) {
         if (s + w2 - 1 < s1 || s > s1 + w1 - 1) starts.push(s);
@@ -300,9 +301,9 @@ export const TASKS = [
     title: 'Комната',
     text: 'На поле есть прямоугольная комната, окружённая стенами без проходов. Размеры комнаты неизвестны (не меньше 3×3). Робот находится в какой-то клетке внутри комнаты.\n\nНапишите алгоритм, закрашивающий все клетки комнаты, которые примыкают к её стенам (весь «периметр» изнутри).',
     hint: 'Сначала отведите Робота в левый верхний угол комнаты. Затем обойдите комнату по кругу четырьмя циклами, закрашивая клетку перед каждым шагом.',
-    generate(pick) {
-      const W = pick(3, 9);
-      const H = pick(3, 6);
+    generate(pick, big = false) {
+      const W = big ? pick(25, 30) : pick(3, 9);
+      const H = big ? pick(15, 20) : pick(3, 6);
       const f = new Field(W + 2, H + 2);
       f.hLine(1, 1, W);
       f.hLine(H + 1, 1, W);
@@ -376,8 +377,8 @@ export const TASKS = [
     title: 'Лестница',
     text: 'На бесконечном поле есть лестница, которая спускается слева направо. Каждая ступенька — это горизонтальная стена (длиной от 1 до 3 клеток), после которой идёт вертикальный спуск высотой 1 или 2 клетки. Число ступенек и их размеры неизвестны. Справа от последней ступеньки стоит вертикальная стена. Робот находится в клетке над первой ступенькой у её левого края.\n\nНапишите алгоритм, закрашивающий все клетки, расположенные непосредственно над ступеньками.',
     hint: 'Повторяйте, пока справа свободно: закрасить, шаг вправо, и затем спуститься вниз, пока снизу свободно (вложенный цикл). После цикла закрасьте последнюю клетку.',
-    generate(pick) {
-      const n = pick(3, 6);
+    generate(pick, big = false) {
+      const n = big ? pick(12, 15) : pick(3, 6);
       const widths = Array.from({ length: n }, () => pick(1, 3));
       const drops = Array.from({ length: n - 1 }, () => pick(1, 2));
       const x0 = 2;
@@ -430,7 +431,9 @@ export function checkVariants(task) {
   list.push({ label: 'Все размеры минимальные', ...task.generate(makePick('min', 1)) });
   list.push({ label: 'Все размеры максимальные', ...task.generate(makePick('max', 1)) });
   for (let i = 0; i < 4; i++) list.push({ label: `Крайние случаи №${i + 1}`, ...task.generate(makePick('edge', 100 + i)) });
-  for (let i = 0; i < 8; i++) list.push({ label: `Случайный вариант №${i + 1}`, ...task.generate(makePick('random', 500 + i)) });
+  for (let i = 0; i < 6; i++) list.push({ label: `Случайный вариант №${i + 1}`, ...task.generate(makePick('random', 500 + i)) });
+  // Длинные стены: ошибка, которая растёт с длиной стены, здесь даст больше 10 клеток
+  for (let i = 0; i < 2; i++) list.push({ label: `Длинные стены №${i + 1}`, ...task.generate(makePick('random', 900 + i), true) });
   return list;
 }
 
