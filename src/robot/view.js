@@ -228,7 +228,8 @@ export class FieldView {
       }
     }
     if (walls) parts.push(`<path class="f-wall" d="${walls}"/>`);
-    parts.push(`<rect class="f-fence" x="${cx(0)}" y="${cy(0)}" width="${f.w * CELL}" height="${f.h * CELL}"/>`);
+    // На бесконечном поле (в заданиях) забора нет
+    if (!f.open) parts.push(`<rect class="f-fence" x="${cx(0)}" y="${cy(0)}" width="${f.w * CELL}" height="${f.h * CELL}"/>`);
 
     // Подсветка под указателем в режиме редактирования
     if (this.hover && this.editable) {
@@ -247,7 +248,12 @@ export class FieldView {
       }
     }
 
-    // Робот — ромбик; при отказе угол в сторону стены красный
+    // Робот — ромбик; при отказе угол в сторону стены красный.
+    // Ушедшего за край рисунка Робота не рисуем
+    if (!f.inside(f.robot.x, f.robot.y)) {
+      this.svg.innerHTML = parts.join('');
+      return;
+    }
     const rx = cx(f.robot.x) + CELL / 2;
     const ry = cy(f.robot.y) + CELL / 2;
     const r = CELL * 0.36;

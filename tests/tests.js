@@ -324,6 +324,36 @@ test('пропущена одна клетка в начале — 1 балл: �
   eq(checkTask(task, compile(almost).program).score, 1);
 });
 
+test('поле в заданиях бесконечное: у края рисунка забора нет', () => {
+  for (const task of TASKS) {
+    for (const v of checkVariants(task)) assert(v.field.open, `${task.id}: ${v.label} — поле с забором`);
+  }
+});
+
+test('открытое поле: Робот уходит за край, закраска там — лишние клетки', () => {
+  const f = new Field(2, 1).makeOpen();
+  const r = run('использовать Робот\nалг\nнач\n  нц 3 раз\n    вправо\n  кц\n  закрасить\n  вверх\n  влево\nкон', f);
+  eq(r.field.robot, { x: 2, y: -1 });
+  assert(r.field.isPainted(3, 0), 'закраска за краем потерялась');
+  eq(compare(r.field, new Set()).extra, [[3, 0]]);
+});
+
+test('программа, которую останавливал только забор, на бесконечном поле — 0 баллов', () => {
+  const task = TASKS.find((t) => t.id === 'h-pass');
+  // Закрашивает верно, но цикл заканчивается только у края поля
+  const untilFence = [
+    'использовать Робот', 'алг', 'нач',
+    '  нц пока справа свободно',
+    '    если не снизу свободно то', '      закрасить', '    все',
+    '    вправо',
+    '  кц',
+    'кон',
+  ].join('\n');
+  const res = checkTask(task, compile(untilFence).program);
+  eq(res.score, 0);
+  assert(res.results.every((r) => r.run.status === 'escape'), 'ожидался уход Робота по бесконечному полю');
+});
+
 test('бесконечный цикл определяется', () => {
   const r = runSilently(compile('использовать Робот\nалг\nнач\n  нц пока да\n  кц\nкон').program, new Field(3, 3), 5000);
   eq(r.status, 'timeout');

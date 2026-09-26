@@ -5,9 +5,6 @@ cd /d "%~dp0"
 echo Загружаю изменения с GitHub...
 git pull --rebase --autostash || goto error
 
-echo Собираю robot15.html...
-python build.py || goto error
-
 git add -A
 git diff --cached --quiet && (
   echo Локальных изменений нет.

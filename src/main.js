@@ -336,6 +336,13 @@ function advance() {
   }
   run.steps++;
   run.line = r.value;
+  if (run.field.escaped()) {
+    log('err', 'Робот ушёл от стен и идёт по бесконечному полю: выполнение алгоритма никогда не завершится. По критериям ОГЭ это 0 баллов.', run.line);
+    stopRun(true);
+    state.resultView.html = '<span class="bad">Робот ушёл по бесконечному полю — программа не завершится.</span> «Сбросить поле» вернёт стартовую обстановку.';
+    updateFieldStatus();
+    return false;
+  }
   if (run.steps > RUN_LIMIT) {
     log('err', `Программа сделала больше ${RUN_LIMIT.toLocaleString('ru')} шагов и остановлена. Возможно, цикл никогда не заканчивается.`, run.line);
     stopRun(true);
@@ -864,7 +871,7 @@ function init() {
   } else {
     setMode(store.get('mode', 'tasks') === 'sandbox' ? 'sandbox' : 'tasks');
   }
-  log('info', 'Напишите программу и нажмите «Выполнить» (F9). «Проверить решение» запустит её на 15 вариантах поля.');
+  log('info', 'Напишите программу и нажмите «Выполнить» (F9). «Проверить решение» запустит её на 30 вариантах поля.');
 }
 
 init();

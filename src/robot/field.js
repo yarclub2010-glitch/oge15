@@ -1,6 +1,8 @@
 // Обстановка Робота: клетчатое поле со стенами, закрашенными клетками и Роботом.
 // Клетка (x, y): x — столбец слева направо, y — строка сверху вниз, счёт с нуля.
-// По периметру поля всегда стоит стена («забор»), как в Кумире.
+// По периметру поля стоит стена («забор»), как в Кумире.
+// Исключение — открытое поле (open): в заданиях ОГЭ поле бесконечное, забора нет,
+// Робот может уйти за нарисованную часть, а закраску там помнит outPaint.
 
 export const DIRS = {
   up: { dx: 0, dy: -1, side: 'сверху' },
@@ -8,6 +10,10 @@ export const DIRS = {
   left: { dx: -1, dy: 0, side: 'слева' },
   right: { dx: 1, dy: 0, side: 'справа' },
 };
+
+// На бесконечном поле Робот, ушедший от рисунка дальше чем на столько клеток,
+// идёт по пустому полю без стен: выполнение алгоритма не завершится
+export const ESCAPE = 5;
 
 export const MAX_W = 40;
 export const MAX_H = 30;
@@ -25,7 +31,24 @@ export class Field {
     this.extra = new Map();
     this.robot = { x: 0, y: 0 };
     this.broken = null; // направление, в котором Робот разбился
+    this.open = false;
+    this.outPaint = new Set(); // закрашенные клетки за пределами нарисованной части, "x,y"
     this.setBorder();
+  }
+
+  // Бесконечное поле: убираем забор
+  makeOpen() {
+    this.open = true;
+    const { w, h } = this;
+    for (let x = 0; x < w; x++) {
+      this.hw[x] = 0;
+      this.hw[h * w + x] = 0;
+    }
+    for (let y = 0; y < h; y++) {
+      this.vw[y * (w + 1)] = 0;
+      this.vw[y * (w + 1) + w] = 0;
+    }
+    return this;
   }
 
   setBorder() {
@@ -40,12 +63,25 @@ export class Field {
     }
   }
 
+  // На сколько клеток Робот ушёл за нарисованную часть поля (0 — он на рисунке)
+  robotOutside() {
+    const { x, y } = this.robot;
+    return Math.max(-x, x - this.w + 1, -y, y - this.h + 1, 0);
+  }
+
+  // Робот ушёл по бесконечному полю так далеко, что стен вокруг уже нет
+  escaped() {
+    return this.open && this.robotOutside() > ESCAPE;
+  }
+
   inside(x, y) {
     return x >= 0 && y >= 0 && x < this.w && y < this.h;
   }
 
   wall(x, y, dir) {
     const { w } = this;
+    // За нарисованной частью открытого поля стен нет
+    if (this.open && (!this.inside(x, y) || !this.inside(x + DIRS[dir].dx, y + DIRS[dir].dy))) return false;
     switch (dir) {
       case 'up': return this.hw[y * w + x] === 1;
       case 'down': return this.hw[(y + 1) * w + x] === 1;
@@ -88,10 +124,16 @@ export class Field {
   }
 
   isPainted(x, y) {
+    if (!this.inside(x, y)) return this.outPaint.has(`${x},${y}`);
     return this.painted[y * this.w + x] === 1;
   }
 
   setPainted(x, y, on) {
+    if (!this.inside(x, y)) {
+      if (on) this.outPaint.add(`${x},${y}`);
+      else this.outPaint.delete(`${x},${y}`);
+      return;
+    }
     this.painted[y * this.w + x] = on ? 1 : 0;
   }
 
@@ -111,6 +153,7 @@ export class Field {
 
   clearPaint() {
     this.painted.fill(0);
+    this.outPaint.clear();
   }
 
   clone() {
@@ -118,6 +161,8 @@ export class Field {
     f.hw.set(this.hw);
     f.vw.set(this.vw);
     f.painted.set(this.painted);
+    f.open = this.open;
+    f.outPaint = new Set(this.outPaint);
     f.extra = new Map([...this.extra].map(([k, v]) => [k, { ...v }]));
     f.robot = { ...this.robot };
     f.broken = this.broken;
@@ -158,7 +203,7 @@ export class Field {
 
   query(kind, dir) {
     const { x, y } = this.robot;
-    const e = this.extra.get(y * this.w + x) || {};
+    const e = (this.inside(x, y) && this.extra.get(y * this.w + x)) || {};
     switch (kind) {
       case 'free': return !this.wall(x, y, dir);
       case 'wall': return this.wall(x, y, dir);

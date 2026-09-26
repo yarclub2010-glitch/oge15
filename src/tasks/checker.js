@@ -20,6 +20,7 @@ export function runSilently(program, startField, limit = STEP_LIMIT) {
   try {
     while (!gen.next().done) {
       steps++;
+      if (field.escaped()) return { status: 'escape', field, steps };
       if (steps > limit) return { status: 'timeout', field, steps };
     }
   } catch (err) {
@@ -44,12 +45,17 @@ export function compare(field, target, startField) {
       if (!target.has(k) && now && !was) extra.push([x, y]);
     }
   }
+  // Бесконечное поле: закраска за нарисованной частью — тоже лишние клетки
+  for (const k of field.outPaint) {
+    if (!target.has(k)) extra.push(k.split(',').map(Number));
+  }
   return { extra, missing };
 }
 
 export function describeRun(run, diff) {
   if (run.status === 'crash') return `Робот разбился (строка ${run.error.line}): ${run.error.message}`;
   if (run.status === 'error') return `Ошибка (строка ${run.error.line}): ${run.error.message}`;
+  if (run.status === 'escape') return 'Программа не завершается: Робот ушёл от стен и идёт по бесконечному полю';
   if (run.status === 'timeout') return 'Программа не завершилась: похоже, цикл никогда не заканчивается';
   const parts = [];
   if (diff.missing.length) parts.push(`не закрашено клеток: ${diff.missing.length}`);
@@ -80,11 +86,12 @@ export function checkTask(task, program) {
     verdict = 'Программа не закрасила ни одной нужной клетки — это 0 баллов.';
   } else if (failedRun) {
     score = 0;
-    verdict = failedRun.run.status === 'crash'
-      ? 'Робот разбился хотя бы на одном варианте — по критериям это 0 баллов.'
-      : failedRun.run.status === 'timeout'
-        ? 'Программа не завершилась хотя бы на одном варианте — по критериям это 0 баллов.'
-        : 'Во время выполнения произошла ошибка — по критериям это 0 баллов.';
+    verdict = {
+      crash: 'Робот разбился хотя бы на одном варианте — по критериям это 0 баллов.',
+      escape: 'Хотя бы на одном варианте Робот уходит по бесконечному полю, и выполнение не завершается — по критериям это 0 баллов.',
+      timeout: 'Программа не завершилась хотя бы на одном варианте — по критериям это 0 баллов.',
+      error: 'Во время выполнения произошла ошибка — по критериям это 0 баллов.',
+    }[failedRun.run.status];
   } else if (results.every((r) => r.ok)) {
     score = 2;
     verdict = 'Алгоритм правильно работает на всех проверенных вариантах.';
