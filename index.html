@@ -3,26 +3,251 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Story</title>
-  <style>
-    html, body {
-      margin: 0;
-      height: 100%;
-      background: #111;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-    canvas {
-      background: #222;
-      max-width: 100%;
-      max-height: 100%;
-      image-rendering: pixelated;
-    }
-  </style>
+  <title>Робот — тренажёр задания 15 ОГЭ</title>
+  <meta name="description" content="Онлайн-тренажёр задания 15 ОГЭ по информатике: исполнитель Робот, язык Кумир, автоматическая проверка решения на многих вариантах.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%23289628'/%3E%3Cpath d='M16 5l11 11-11 11L5 16z' fill='%23fff' stroke='%23111' stroke-width='2'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="src/style.css">
 </head>
 <body>
-  <canvas id="game" width="800" height="450"></canvas>
+  <header class="topbar">
+    <div class="brand">
+      <svg class="brand-logo" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7"/><path d="M16 6l10 10-10 10L6 16z"/></svg>
+      <div class="brand-text">
+        <strong>Робот</strong>
+        <span>тренажёр задания 15 ОГЭ</span>
+      </div>
+    </div>
+    <div class="modes" role="tablist" aria-label="Режим">
+      <button role="tab" data-mode="tasks" aria-selected="true">Задания</button>
+      <button role="tab" data-mode="sandbox" aria-selected="false">Свободное поле</button>
+    </div>
+    <button class="btn ghost" id="btn-help" title="Справка по языку и тренажёру (F1)">Справка</button>
+  </header>
+
+  <main class="layout">
+    <aside class="side" aria-label="Задание">
+      <section id="panel-tasks" class="panel">
+        <div class="task-picker">
+          <button class="btn icon" id="btn-prev" title="Предыдущее задание" aria-label="Предыдущее задание">‹</button>
+          <select id="task-select" aria-label="Выбор задания"></select>
+          <button class="btn icon" id="btn-next" title="Следующее задание" aria-label="Следующее задание">›</button>
+        </div>
+
+        <article class="task-card">
+          <div class="task-meta">
+            <span class="chip" id="task-level"></span>
+            <span class="chip chip-score" id="task-status" hidden></span>
+          </div>
+          <h1 id="task-title"></h1>
+          <div id="task-text" class="task-text"></div>
+          <p id="task-source" class="task-source"></p>
+          <details class="rules">
+            <summary>Общие требования к решению</summary>
+            <ul id="rules"></ul>
+          </details>
+        </article>
+
+        <div class="task-actions">
+          <button class="btn primary big" id="btn-check">Проверить решение</button>
+          <div class="btn-row">
+            <button class="btn" id="btn-target" aria-pressed="false">Показать цель</button>
+            <button class="btn" id="btn-variant" title="Другие длины стен и проходы">Другой вариант</button>
+          </div>
+          <div class="btn-row">
+            <button class="btn" id="btn-hint" aria-expanded="false">Подсказка</button>
+            <button class="btn" id="btn-solution" aria-expanded="false">Решение</button>
+          </div>
+        </div>
+
+        <div id="hint" class="note" hidden></div>
+        <div id="solution" class="solution" hidden>
+          <pre id="solution-code"></pre>
+          <button class="btn" id="btn-use-solution">Вставить в редактор</button>
+        </div>
+
+        <section id="check-result" class="check" hidden aria-live="polite"></section>
+      </section>
+
+      <section id="panel-sandbox" class="panel" hidden>
+        <h1>Свободное поле</h1>
+        <p class="muted">Нарисуйте свою обстановку и проверьте на ней любую программу. Инструменты — над полем: «Стены» (щелчок по границе клетки), «Закраска», «Робот».</p>
+
+        <div class="form-block">
+          <div class="size-row">
+            <label>Ширина <input type="number" id="field-w" min="1" max="40" inputmode="numeric"></label>
+            <label>Высота <input type="number" id="field-h" min="1" max="30" inputmode="numeric"></label>
+            <button class="btn" id="btn-resize">Изменить</button>
+          </div>
+          <div class="btn-row">
+            <button class="btn" id="btn-clear-walls">Убрать стены</button>
+            <button class="btn" id="btn-clear-paint">Убрать закраску</button>
+          </div>
+        </div>
+
+        <div class="form-block">
+          <h2>Файлы Кумира</h2>
+          <div class="btn-row">
+            <button class="btn" id="btn-open-fil">Открыть .fil</button>
+            <button class="btn" id="btn-save-fil">Сохранить .fil</button>
+          </div>
+          <p class="muted small">Обстановки совместимы с настоящим Кумиром: файл, сохранённый здесь, открывается в Кумире через «Робот → Загрузить обстановку», и наоборот.</p>
+        </div>
+
+        <div class="form-block">
+          <h2>Взять обстановку из задания</h2>
+          <select id="sandbox-from-task" aria-label="Задание для обстановки"></select>
+          <button class="btn" id="btn-sandbox-from-task">Загрузить на поле</button>
+        </div>
+      </section>
+    </aside>
+
+    <section class="pane pane-code" aria-label="Программа">
+      <div class="toolbar">
+        <button class="btn primary" id="btn-run" title="Выполнить (F9)"><span aria-hidden="true">▶</span> Выполнить</button>
+        <button class="btn" id="btn-step" title="Шаг (F8)">Шаг</button>
+        <button class="btn" id="btn-stop" title="Остановить (Esc)" disabled>Стоп</button>
+        <label class="speed" title="Скорость выполнения">
+          <span>Скорость</span>
+          <input type="range" id="speed" min="0" max="4" step="1" value="2">
+        </label>
+        <span class="spacer"></span>
+        <div class="menu-wrap">
+          <button class="btn ghost" id="btn-file-menu" aria-haspopup="true" aria-expanded="false">Файл ▾</button>
+          <div class="menu" id="file-menu" hidden role="menu">
+            <button role="menuitem" id="btn-open-code">Открыть программу (.kum)</button>
+            <button role="menuitem" id="btn-save-code">Сохранить программу (.kum)</button>
+            <button role="menuitem" id="btn-format">Выровнять отступы</button>
+            <button role="menuitem" id="btn-new-code">Новая программа</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="palette" aria-label="Вставка команд">
+        <div class="palette-group">
+          <button data-snippet="вверх">вверх</button>
+          <button data-snippet="вниз">вниз</button>
+          <button data-snippet="влево">влево</button>
+          <button data-snippet="вправо">вправо</button>
+          <button data-snippet="закрасить">закрасить</button>
+        </div>
+        <div class="palette-group">
+          <button data-snippet="сверху свободно" class="cond">сверху свободно</button>
+          <button data-snippet="снизу свободно" class="cond">снизу свободно</button>
+          <button data-snippet="слева свободно" class="cond">слева свободно</button>
+          <button data-snippet="справа свободно" class="cond">справа свободно</button>
+          <button data-snippet="не " class="cond">не</button>
+          <button data-snippet=" и " class="cond">и</button>
+          <button data-snippet=" или " class="cond">или</button>
+        </div>
+        <div class="palette-group">
+          <button data-snippet="нц пока ▮&#10;  &#10;кц" class="kw">нц пока … кц</button>
+          <button data-snippet="если ▮ то&#10;  &#10;все" class="kw">если … то … все</button>
+          <button data-snippet="если ▮ то&#10;  &#10;иначе&#10;  &#10;все" class="kw">если … иначе … все</button>
+          <button data-snippet="нц ▮ раз&#10;  &#10;кц" class="kw">нц N раз</button>
+        </div>
+      </div>
+
+      <div id="editor" class="editor-host"></div>
+
+      <div class="console">
+        <div class="console-head">
+          <span>Сообщения</span>
+          <button class="btn ghost small" id="btn-clear-log">Очистить</button>
+        </div>
+        <div id="log" class="log" aria-live="polite"></div>
+      </div>
+    </section>
+
+    <section class="pane pane-field" aria-label="Поле Робота">
+      <div class="toolbar">
+        <div class="seg" role="radiogroup" aria-label="Инструмент редактирования поля">
+          <button role="radio" data-tool="none" aria-checked="true" title="Только смотреть">Смотреть</button>
+          <button role="radio" data-tool="walls" aria-checked="false" title="Щелчок по границе клетки ставит или убирает стену">Стены</button>
+          <button role="radio" data-tool="paint" aria-checked="false" title="Щелчок по клетке закрашивает её">Закраска</button>
+          <button role="radio" data-tool="robot" aria-checked="false" title="Щелчок по клетке ставит туда Робота">Робот</button>
+        </div>
+        <span class="spacer"></span>
+        <button class="btn" id="btn-reset-field" title="Вернуть стартовую обстановку">Сбросить поле</button>
+      </div>
+      <div class="field-status" id="field-status"></div>
+      <div id="field" class="field-host" tabindex="0" aria-label="Поле Робота. Стрелки — управление с пульта, пробел — закрасить"></div>
+      <div class="pult" aria-label="Пульт Робота">
+        <span class="pult-title">Пульт</span>
+        <button class="btn icon" data-pult="left" title="влево" aria-label="влево">←</button>
+        <button class="btn icon" data-pult="up" title="вверх" aria-label="вверх">↑</button>
+        <button class="btn icon" data-pult="down" title="вниз" aria-label="вниз">↓</button>
+        <button class="btn icon" data-pult="right" title="вправо" aria-label="вправо">→</button>
+        <button class="btn" data-pult="paint" title="закрасить">закрасить</button>
+        <span class="pult-sense" id="pult-sense"></span>
+      </div>
+    </section>
+  </main>
+
+  <dialog id="help" class="help">
+    <div class="help-head">
+      <h2>Справка</h2>
+      <button class="btn ghost" id="btn-help-close" aria-label="Закрыть">✕</button>
+    </div>
+    <div class="help-body">
+      <h3>Как устроена программа</h3>
+<pre class="code">использовать Робот
+алг
+нач
+  | здесь команды
+кон</pre>
+      <p>Текст после <code>|</code> — комментарий, Робот его не выполняет.</p>
+
+      <h3>Команды Робота</h3>
+      <table>
+        <tr><td><code>вверх</code> <code>вниз</code> <code>влево</code> <code>вправо</code></td><td>шаг на одну клетку. Если на пути стена — Робот разбивается, программа останавливается</td></tr>
+        <tr><td><code>закрасить</code></td><td>закрасить клетку, где стоит Робот</td></tr>
+      </table>
+
+      <h3>Условия</h3>
+      <table>
+        <tr><td><code>сверху свободно</code>, <code>снизу свободно</code>, <code>слева свободно</code>, <code>справа свободно</code></td><td>да, если с этой стороны нет стены</td></tr>
+        <tr><td><code>сверху стена</code> … <code>справа стена</code></td><td>да, если стена есть</td></tr>
+        <tr><td><code>клетка закрашена</code>, <code>клетка чистая</code></td><td>проверка текущей клетки</td></tr>
+        <tr><td><code>не</code>, <code>и</code>, <code>или</code></td><td>связки: <code>(справа свободно) и (не снизу свободно)</code></td></tr>
+      </table>
+
+      <h3>Конструкции</h3>
+<pre class="code">нц пока справа свободно     | цикл «пока»
+  вправо
+кц
+
+нц 5 раз                    | повторить 5 раз
+  закрасить; вниз
+кц
+
+если снизу свободно то      | ветвление
+  вниз
+иначе
+  вправо
+все</pre>
+      <p>Также работают <code>нц для i от 1 до n</code>, <code>нц … кц при условие</code>, <code>выбор при …</code>, величины <code>цел</code>, <code>вещ</code>, <code>лог</code>, <code>лит</code>, таблицы, <code>вывод</code> и свои алгоритмы.</p>
+
+      <h3>Клавиши (как в Кумире)</h3>
+      <table>
+        <tr><td><kbd>F9</kbd> или <kbd>Ctrl</kbd>+<kbd>Enter</kbd></td><td>выполнить программу</td></tr>
+        <tr><td><kbd>F8</kbd></td><td>выполнить один шаг</td></tr>
+        <tr><td><kbd>Esc</kbd></td><td>остановить</td></tr>
+        <tr><td><kbd>Tab</kbd> / <kbd>Shift</kbd>+<kbd>Tab</kbd></td><td>отступ / убрать отступ</td></tr>
+        <tr><td><kbd>Enter</kbd> после <code>нц</code>, <code>если</code>, <code>нач</code></td><td>редактор сам допишет <code>кц</code>, <code>все</code>, <code>кон</code></td></tr>
+      </table>
+
+      <h3>Как проверяется решение</h3>
+      <p>На экзамене программа должна работать при «любом допустимом расположении стен», а не только на рисунке. Поэтому тренажёр запускает её на 15 вариантах: как на рисунке, с минимальными и максимальными размерами, с проходами у самых концов стен и на случайных. Баллы — по критериям ОГЭ:</p>
+      <ul>
+        <li><b>2 балла</b> — на всех вариантах всё закрашено верно;</li>
+        <li><b>1 балл</b> — Робот не разбился и программа завершилась, но есть ошибки: не больше 10 лишних и не больше 10 незакрашенных клеток;</li>
+        <li><b>0 баллов</b> — Робот разбился, программа зациклилась или ошибок больше.</li>
+      </ul>
+      <p class="muted small">Тренажёр не заменяет проверку экспертами на экзамене, но устроен по тем же правилам.</p>
+    </div>
+  </dialog>
+
+  <input type="file" id="file-input" hidden>
   <script type="module" src="src/main.js"></script>
 </body>
 </html>
