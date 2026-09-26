@@ -178,7 +178,9 @@ kbd { font-size: 0.85em; border: 1px solid var(--line-strong); border-bottom-wid
   border-bottom: 1px solid var(--line);
   flex: none;
 }
-.brand { display: flex; align-items: center; gap: 10px; }
+.brand { display: flex; align-items: center; gap: 10px; color: inherit; text-decoration: none; border-radius: var(--radius-sm); }
+.brand:hover strong { color: var(--accent); }
+.brand:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 .brand-logo { width: 32px; height: 32px; flex: none; }
 .brand-logo rect { fill: var(--f-bg); }
 .brand-logo path { fill: var(--f-robot); stroke: var(--f-robot-line); stroke-width: 2; }

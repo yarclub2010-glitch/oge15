@@ -110,9 +110,7 @@ export class CodeEditor {
     this.notes = new Map();
     this.current = null;
 
-    this.input.addEventListener('input', (e) => {
-      // Напечатали «кц», «все», «кон» или «иначе» — сразу выравниваем строку
-      if (!this.aligning && e.inputType && e.inputType.startsWith('insert')) this.alignCloser();
+    this.input.addEventListener('input', () => {
       this.render();
       this.ensureCaretVisible();
       this.onChange(this.value);
@@ -291,31 +289,53 @@ export class CodeEditor {
   }
 
   smartEnter() {
-    this.alignCloser();
-    const { lineIndex } = this.currentLineInfo();
-    const lines = this.value.split('\n');
+    const text = this.value;
+    const { pos, start, end, lineIndex, line } = this.currentLineInfo();
+    const lines = text.split('\n');
     const indents = computeIndents(lines.slice(0, lineIndex + 1).concat(['x']));
-    this.insertText('\n' + '  '.repeat(indents[lineIndex + 1]));
+    const words = lineWords(line);
+    const first = words[0];
+
+    // Если строка начинается со слова-закрывашки, выравниваем её по открывающей конструкции
+    let ownIndent = line.match(/^\s*/)[0];
+    if (first && DEDENT_WORDS.has(first) && pos === end) {
+      const want = '  '.repeat(indents[lineIndex]);
+      if (want !== ownIndent) {
+        this.input.setSelectionRange(start, start + ownIndent.length);
+        this.insertText(want);
+        ownIndent = want;
+      }
+    }
+
+    const caret = this.input.selectionStart;
+    const nextIndent = '  '.repeat(indents[lineIndex + 1]);
+    const opener = words.find((w) => OPENERS[w]);
+    const opens = words.filter((w) => OPENERS[w]).length;
+    const closes = words.filter((w) => CLOSE_WORDS.has(w)).length;
+
+    // Автоматически дописываем закрывающее слово, если конструкции ещё не закрыта
+    if (opener && opens > closes && caret === start + ownIndent.length + line.trim().length && !this.hasCloser(lines, lineIndex, ownIndent)) {
+      const closer = OPENERS[opener];
+      this.insertText(`\n${nextIndent}\n${ownIndent}${closer}`);
+      const p = caret + 1 + nextIndent.length;
+      this.input.setSelectionRange(p, p);
+      this.ensureCaretVisible();
+      return;
+    }
+    this.insertText('\n' + nextIndent);
     this.ensureCaretVisible();
   }
 
-  // Если строка начинается со слова «кц», «все», «кон» или «иначе», выравниваем её
-  // по открывающей конструкции («нц», «если», «нач»). Закрывающие слова сами не дописываем.
-  alignCloser() {
-    if (this.aligning || this.input.readOnly) return;
-    const { pos, start, lineIndex, line } = this.currentLineInfo();
-    const first = lineWords(line)[0];
-    if (!first || !DEDENT_WORDS.has(first) || !line.trim().startsWith(first)) return;
-    const lines = this.value.split('\n');
-    const indents = computeIndents(lines.slice(0, lineIndex + 1));
-    const own = line.match(/^\s*/)[0];
-    const want = '  '.repeat(indents[lineIndex]);
-    if (want === own) return;
-    this.aligning = true;
-    this.input.setSelectionRange(start, start + own.length);
-    this.insertText(want);
-    const p = Math.max(start + want.length, pos + want.length - own.length);
-    this.input.setSelectionRange(p, p);
-    this.aligning = false;
+  // Есть ли ниже строка с тем же отступом, закрывающая конструкцию
+  hasCloser(lines, lineIndex, indentStr) {
+    for (let i = lineIndex + 1; i < lines.length; i++) {
+      const l = lines[i];
+      if (!l.trim()) continue;
+      const ind = l.match(/^\s*/)[0];
+      if (ind.length > indentStr.length) continue;
+      const first = lineWords(l)[0];
+      return ind.length === indentStr.length && (CLOSE_WORDS.has(first) || first === 'иначе');
+    }
+    return false;
   }
 }

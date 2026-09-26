@@ -10,13 +10,13 @@
 </head>
 <body>
   <header class="topbar">
-    <div class="brand">
+    <a class="brand" href="./" title="На главную">
       <svg class="brand-logo" viewBox="0 0 32 32" aria-hidden="true"><rect width="32" height="32" rx="7"/><path d="M16 6l10 10-10 10L6 16z"/></svg>
       <div class="brand-text">
         <strong>Робот</strong>
         <span>тренажёр задания 15 ОГЭ</span>
       </div>
-    </div>
+    </a>
     <div class="modes" role="tablist" aria-label="Режим">
       <button role="tab" data-mode="tasks" aria-selected="true">Задания</button>
       <button role="tab" data-mode="sandbox" aria-selected="false">Свободное поле</button>
@@ -233,7 +233,7 @@
         <tr><td><kbd>F8</kbd></td><td>выполнить один шаг</td></tr>
         <tr><td><kbd>Esc</kbd></td><td>остановить</td></tr>
         <tr><td><kbd>Tab</kbd> / <kbd>Shift</kbd>+<kbd>Tab</kbd></td><td>отступ / убрать отступ</td></tr>
-        <tr><td><code>кц</code>, <code>все</code>, <code>кон</code>, <code>иначе</code></td><td>строка сама выравнивается по своей открывающей конструкции (<code>нц</code>, <code>если</code>, <code>нач</code>)</td></tr>
+        <tr><td><kbd>Enter</kbd> после <code>нц</code>, <code>если</code>, <code>нач</code></td><td>редактор сам допишет <code>кц</code>, <code>все</code>, <code>кон</code></td></tr>
       </table>
 
       <h3>Как проверяется решение</h3>
