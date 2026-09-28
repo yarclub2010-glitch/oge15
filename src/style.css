@@ -716,3 +716,11 @@ kbd { font-size: 0.85em; border: 1px solid var(--line-strong); border-bottom-wid
   .speed input { width: 70px; }
   .console { height: 130px; }
 }
+
+/* Ссылка на тренажёр задания 16 */
+a.btn { display: inline-flex; align-items: center; text-decoration: none; }
+@media (max-width: 800px) {
+  .link-16 { margin-left: auto; }
+  .link-16 span { display: none; }
+  .link-16 + #btn-help { margin-left: 0; }
+}
