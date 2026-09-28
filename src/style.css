@@ -717,10 +717,13 @@ kbd { font-size: 0.85em; border: 1px solid var(--line-strong); border-bottom-wid
   .console { height: 130px; }
 }
 
-/* Ссылки на тренажёры заданий 14 и 16 */
+/* Ссылки на тренажёры заданий 13, 14 и 16 */
 a.btn { display: inline-flex; align-items: center; text-decoration: none; }
 @media (max-width: 800px) {
-  .link-14 { margin-left: auto; }
-  .link-14 span, .link-16 span { display: none; }
+  .link-13 { margin-left: auto; }
+  .link-13 span:not(.lw), .link-14 span:not(.lw), .link-16 span:not(.lw) { display: none; }
   .link-16 + #btn-help { margin-left: 0; }
+}
+@media (max-width: 520px) {
+  .lw { display: none; }
 }
