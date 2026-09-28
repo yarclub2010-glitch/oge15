@@ -758,9 +758,11 @@ function bind() {
   const setPalette = (on) => {
     $('.palette').hidden = !on;
     $('#btn-palette').textContent = on ? 'Скрыть шаблоны команд' : 'Показать шаблоны команд';
-    store.set('palette', on);
+    store.set('templates', on);
   };
-  setPalette(store.get('palette', true));
+  // По умолчанию шаблоны выключены: на экзамене программу пишут сами.
+  // Ключ новый: старый 'palette' сохранялся включённым у всех, кто уже заходил
+  setPalette(store.get('templates', false));
   $('#btn-palette').addEventListener('click', () => setPalette($('.palette').hidden));
 
   $$('.palette [data-snippet]').forEach((b) => {

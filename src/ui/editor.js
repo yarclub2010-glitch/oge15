@@ -1,5 +1,5 @@
 // Редактор программы: подсветка, номера строк, поля со значениями (как в Кумире),
-// автоматические отступы и дописывание «кц», «все», «кон».
+// автоматические отступы. «кц», «все», «кон» ученик пишет сам, как на экзамене.
 
 import { KEYWORDS } from '../kumir/lexer.js';
 
@@ -297,45 +297,22 @@ export class CodeEditor {
     const first = words[0];
 
     // Если строка начинается со слова-закрывашки, выравниваем её по открывающей конструкции
-    let ownIndent = line.match(/^\s*/)[0];
+    const ownIndent = line.match(/^\s*/)[0];
     if (first && DEDENT_WORDS.has(first) && pos === end) {
       const want = '  '.repeat(indents[lineIndex]);
       if (want !== ownIndent) {
         this.input.setSelectionRange(start, start + ownIndent.length);
         this.insertText(want);
-        ownIndent = want;
+        // Курсор — снова в конец строки, иначе Enter разорвёт её перед «кц»
+        const lineEnd = end - ownIndent.length + want.length;
+        this.input.setSelectionRange(lineEnd, lineEnd);
       }
     }
 
-    const caret = this.input.selectionStart;
+    // Закрывающие слова (кц, все, кон) не дописываем: на экзамене ученик пишет их сам.
+    // Новая строка получает отступ по вложенности
     const nextIndent = '  '.repeat(indents[lineIndex + 1]);
-    const opener = words.find((w) => OPENERS[w]);
-    const opens = words.filter((w) => OPENERS[w]).length;
-    const closes = words.filter((w) => CLOSE_WORDS.has(w)).length;
-
-    // Автоматически дописываем закрывающее слово, если конструкции ещё не закрыта
-    if (opener && opens > closes && caret === start + ownIndent.length + line.trim().length && !this.hasCloser(lines, lineIndex, ownIndent)) {
-      const closer = OPENERS[opener];
-      this.insertText(`\n${nextIndent}\n${ownIndent}${closer}`);
-      const p = caret + 1 + nextIndent.length;
-      this.input.setSelectionRange(p, p);
-      this.ensureCaretVisible();
-      return;
-    }
     this.insertText('\n' + nextIndent);
     this.ensureCaretVisible();
-  }
-
-  // Есть ли ниже строка с тем же отступом, закрывающая конструкцию
-  hasCloser(lines, lineIndex, indentStr) {
-    for (let i = lineIndex + 1; i < lines.length; i++) {
-      const l = lines[i];
-      if (!l.trim()) continue;
-      const ind = l.match(/^\s*/)[0];
-      if (ind.length > indentStr.length) continue;
-      const first = lineWords(l)[0];
-      return ind.length === indentStr.length && (CLOSE_WORDS.has(first) || first === 'иначе');
-    }
-    return false;
   }
 }

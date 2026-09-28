@@ -120,13 +120,13 @@
             <button role="menuitem" id="btn-open-code">Открыть программу (.kum)</button>
             <button role="menuitem" id="btn-save-code">Сохранить программу (.kum)</button>
             <button role="menuitem" id="btn-format">Выровнять отступы</button>
-            <button role="menuitem" id="btn-palette">Скрыть шаблоны команд</button>
+            <button role="menuitem" id="btn-palette">Показать шаблоны команд</button>
             <button role="menuitem" id="btn-new-code">Новая программа</button>
           </div>
         </div>
       </div>
 
-      <div class="palette" aria-label="Вставка команд">
+      <div class="palette" aria-label="Вставка команд" hidden>
         <div class="palette-group">
           <button data-snippet="вверх">вверх</button>
           <button data-snippet="вниз">вниз</button>
@@ -237,7 +237,7 @@
         <tr><td><kbd>F8</kbd></td><td>выполнить один шаг</td></tr>
         <tr><td><kbd>Esc</kbd></td><td>остановить</td></tr>
         <tr><td><kbd>Tab</kbd> / <kbd>Shift</kbd>+<kbd>Tab</kbd></td><td>отступ / убрать отступ</td></tr>
-        <tr><td><kbd>Enter</kbd> после <code>нц</code>, <code>если</code>, <code>нач</code></td><td>редактор сам допишет <code>кц</code>, <code>все</code>, <code>кон</code></td></tr>
+        <tr><td><kbd>Enter</kbd></td><td>новая строка с нужным отступом; строка с <code>кц</code>, <code>все</code>, <code>кон</code> выравнивается по своей конструкции. Закрывающие слова пишите сами — как на экзамене</td></tr>
       </table>
 
       <h3>Как проверяется решение</h3>
