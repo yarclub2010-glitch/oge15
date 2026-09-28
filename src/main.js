@@ -754,6 +754,15 @@ function bind() {
     editor.focusLine(4);
   });
 
+  // Кнопки-шаблоны над программой можно убрать, чтобы писать код самому
+  const setPalette = (on) => {
+    $('.palette').hidden = !on;
+    $('#btn-palette').textContent = on ? 'Скрыть шаблоны команд' : 'Показать шаблоны команд';
+    store.set('palette', on);
+  };
+  setPalette(store.get('palette', true));
+  $('#btn-palette').addEventListener('click', () => setPalette($('.palette').hidden));
+
   $$('.palette [data-snippet]').forEach((b) => {
     b.addEventListener('mousedown', (e) => e.preventDefault());
     b.addEventListener('click', () => editor.insertSnippet(b.dataset.snippet));
