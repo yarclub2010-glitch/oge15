@@ -5,6 +5,8 @@
 
 **Открыть:** https://yarclub2010-glitch.github.io/oge15/
 
+Тренажёр задания 14 (электронные таблицы): https://yarclub2010-glitch.github.io/oge14/
+
 Тренажёр задания 16 (программа на Python): https://yarclub2010-glitch.github.io/oge16/
 
 ## Возможности
