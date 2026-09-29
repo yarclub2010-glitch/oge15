@@ -1,6 +1,7 @@
 // Тренажёр задания 15 ОГЭ: связывает редактор, поле Робота, выполнение и проверку.
 
 import { compile, Interpreter } from './kumir/interpreter.js';
+import { reportScore } from './platform.js';
 import { KumirError } from './kumir/lexer.js';
 import { Field, MAX_W, MAX_H } from './robot/field.js';
 import { FieldView } from './robot/view.js';
@@ -540,6 +541,7 @@ function runCheck() {
       btn.textContent = 'Проверить решение';
     }
     state.check = res;
+    reportScore(15, state.task.id, res.score, 2);
     const prev = state.scores[state.task.id];
     if (prev === undefined || res.score > prev) {
       state.scores[state.task.id] = res.score;
