@@ -11,7 +11,8 @@ const OPENERS = { нц: 'кц', если: 'все', выбор: 'все', нач
 const CLOSE_WORDS = new Set(['кц', 'кц_при', 'все', 'всё', 'кон']);
 const DEDENT_WORDS = new Set(['кц', 'кц_при', 'все', 'всё', 'кон', 'иначе']);
 
-const esc = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
 // Слова строки без строк в кавычках и комментария
 function lineWords(text) {

@@ -9,6 +9,10 @@ import { CodeEditor, formatCode } from './ui/editor.js';
 import { TASKS, LEVELS, COMMON_RULES, taskById, sampleVariant, randomVariant } from './tasks/tasks.js';
 import { checkTask, compare } from './tasks/checker.js';
 
+// Текст из программы ученика или файла — в разметку только так
+const escHtml = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+
 const $ = (sel) => document.querySelector(sel);
 const $$ = (sel) => [...document.querySelectorAll(sel)];
 
@@ -485,8 +489,8 @@ function finishWithError(err) {
     field: run.field,
     text: 'error',
     html: err.kind === 'robot'
-      ? `<span class="bad">${err.message}</span> Красный угол ромбика показывает, куда пытался шагнуть Робот.`
-      : `<span class="bad">Ошибка в строке ${err.line}.</span> ${err.message}`,
+      ? `<span class="bad">${escHtml(err.message)}</span> Красный угол ромбика показывает, куда пытался шагнуть Робот.`
+      : `<span class="bad">Ошибка в строке ${err.line}.</span> ${escHtml(err.message)}`,
   };
   updateFieldStatus();
 }
@@ -584,8 +588,8 @@ function renderCheck(res) {
     <ul class="variants">${res.results.map((r, i) => `
       <li><button data-variant="${i}" class="${r.ok ? 'ok' : 'bad'}">
         <span class="v-icon">${r.ok ? '✓' : '✗'}</span>
-        <span>${r.variant.label}</span>
-        <span class="v-text">${r.text}</span>
+        <span>${escHtml(r.variant.label)}</span>
+        <span class="v-text">${escHtml(r.text)}</span>
       </button></li>`).join('')}
     </ul>`;
   box.querySelectorAll('[data-variant]').forEach((b) => {
@@ -601,7 +605,8 @@ function showCheckResult(i) {
   state.variant = { field: r.variant.field, target: r.variant.target, label: r.variant.label };
   state.start = r.variant.field.clone();
   state.modified = false;
-  const status = r.ok ? `<span class="ok">✓ ${r.variant.label}: всё верно.</span>` : `<span class="bad">✗ ${r.variant.label}: ${r.text}.</span>`;
+  const label = escHtml(r.variant.label);
+  const status = r.ok ? `<span class="ok">✓ ${label}: всё верно.</span>` : `<span class="bad">✗ ${label}: ${escHtml(r.text)}.</span>`;
   state.resultView = {
     field: r.run.field,
     text: 'check',
@@ -855,8 +860,16 @@ function bind() {
   window.addEventListener('hashchange', applyHash);
 }
 
+function safeHash() {
+  try {
+    return decodeURIComponent(location.hash.slice(1));
+  } catch {
+    return ''; // испорченная ссылка — открываем тренажёр как обычно
+  }
+}
+
 function applyHash() {
-  const h = decodeURIComponent(location.hash.slice(1));
+  const h = safeHash();
   if (h === 'sandbox') {
     if (state.mode !== 'sandbox') setMode('sandbox', { updateHash: false });
   } else if (taskById(h)) {
@@ -876,7 +889,7 @@ function init() {
   fillTaskSelect();
   bind();
   setTool('none');
-  const h = decodeURIComponent(location.hash.slice(1));
+  const h = safeHash();
   if (h === 'sandbox') setMode('sandbox', { updateHash: false });
   else if (taskById(h)) {
     state.task = taskById(h);

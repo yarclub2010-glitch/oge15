@@ -237,6 +237,8 @@ export class Field {
   }
 
   static fromJSON(data) {
+    const ok = (n, max) => Number.isInteger(n) && n >= 1 && n <= max;
+    if (!data || !ok(data.w, MAX_W) || !ok(data.h, MAX_H)) throw new Error('Сохранённое поле повреждено');
     const f = new Field(data.w, data.h);
     for (const [x, y, mask] of data.walls || []) {
       if (mask & 8) f.setWall(x, y, 'up', true);
@@ -308,8 +310,9 @@ export class Field {
       const temp = Number(String(p[5] || '0').replace(',', '.'));
       if (rad) e.rad = rad;
       if (temp) e.temp = temp;
-      if (p[6] && p[6] !== '$') e.up = p[6];
-      if (p[7] && p[7] !== '$') e.down = p[7];
+      // Буква в клетке — ровно один символ (в Кумире так и есть); остальное из файла не берём
+      if (p[6] && p[6] !== '$' && [...p[6]].length === 1) e.up = p[6];
+      if (p[7] && p[7] !== '$' && [...p[7]].length === 1) e.down = p[7];
       if (p[8] === '1') e.mark = true;
       if (Object.keys(e).length) f.extra.set(y * w + x, e);
     }

@@ -727,3 +727,6 @@ a.btn { display: inline-flex; align-items: center; text-decoration: none; }
 @media (max-width: 520px) {
   .lw { display: none; }
 }
+
+/* Внутри платформы репетитора готовое решение не показываем: балл идёт в домашнее задание */
+.in-platform #btn-solution, .in-platform #solution, .in-platform #btn-use-solution { display: none !important; }

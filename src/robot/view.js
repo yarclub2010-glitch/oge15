@@ -1,3 +1,6 @@
+
+const escHtml = (s) => String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 // Отрисовка поля Робота (SVG) и редактирование обстановки мышью или пальцем.
 // Цвета — как в Кумире: зелёное поле, жёлтые стены, серые закрашенные клетки, Робот-ромбик.
 
@@ -211,8 +214,8 @@ export class FieldView {
       const x = i % f.w;
       const y = Math.floor(i / f.w);
       if (e.mark) parts.push(`<circle class="f-mark" cx="${cx(x + 1) - 6}" cy="${cy(y + 1) - 6}" r="3"/>`);
-      if (e.up) parts.push(`<text class="f-char" x="${cx(x) + 4}" y="${cy(y) + 13}">${e.up}</text>`);
-      if (e.down) parts.push(`<text class="f-char" x="${cx(x) + 4}" y="${cy(y + 1) - 4}">${e.down}</text>`);
+      if (e.up) parts.push(`<text class="f-char" x="${cx(x) + 4}" y="${cy(y) + 13}">${escHtml(e.up)}</text>`);
+      if (e.down) parts.push(`<text class="f-char" x="${cx(x) + 4}" y="${cy(y + 1) - 4}">${escHtml(e.down)}</text>`);
     }
 
     // Стены

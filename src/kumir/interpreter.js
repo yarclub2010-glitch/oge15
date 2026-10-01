@@ -5,6 +5,8 @@
 import { parse } from './parser.js';
 import { KumirError, KEYWORDS } from './lexer.js';
 
+const MAX_STRING = 100000; // длиннее строки в задачах ОГЭ не нужны, а бесконечный рост вешает вкладку
+
 // ---------- Робот ----------
 
 export const ROBOT_ACTIONS = {
@@ -446,7 +448,10 @@ export class Interpreter {
     const r = yield* this.ev(e.r, scope);
     switch (e.op) {
       case '+':
-        if (typeof l === 'string' && typeof r === 'string') return l + r;
+        if (typeof l === 'string' && typeof r === 'string') {
+          if (l.length + r.length > MAX_STRING) throw new KumirError(`Слишком длинная строка: больше ${MAX_STRING} символов`, e.line, 'runtime');
+          return l + r;
+        }
         return this.asNumber(l, e.line) + this.asNumber(r, e.line);
       case '-': return this.asNumber(l, e.line) - this.asNumber(r, e.line);
       case '*': return this.asNumber(l, e.line) * this.asNumber(r, e.line);
@@ -524,8 +529,11 @@ export class Interpreter {
     }
     idx.forEach((i, k) => {
       const [lo, hi] = cell.dims[k];
-      if (!Number.isInteger(i) || i < lo || i > hi) {
-        throw new KumirError(`Индекс ${formatValue(i)} выходит за границы таблицы «${name}» [${lo}:${hi}]`, line, 'runtime');
+      if (!Number.isInteger(i)) {
+        throw new KumirError(`Индекс таблицы «${name}» должен быть целым числом`, line, 'runtime');
+      }
+      if (i < lo || i > hi) {
+        throw new KumirError(`Индекс ${i} выходит за границы таблицы «${name}» [${lo}:${hi}]`, line, 'runtime');
       }
     });
     return idx.join(',');
